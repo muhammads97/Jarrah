@@ -5,6 +5,7 @@ import com.jarrah.domain.UserEmail
 import com.jarrah.domain.UserName
 import com.jarrah.infra.UsersRepository
 import com.jarrah.utilities.Database
+import com.jarrah.utilities.PassowrdHasher
 import com.jarrah.utilities.TokenUtils
 import java.time.Instant
 import java.util.UUID
@@ -36,10 +37,10 @@ object AuthService {
         return Database.withTransaction { conn ->
             val record = UsersRepository.findByEmail(conn, email)
             val valid = UsersRepository.verifyPassword(password, record?.passwordHash?: "fakeHash") && record != null
-            if (!valid) throw IllegalArgumentException("Invalid credentials")
+            if (!valid) return@withTransaction TokenResult.InvalidToken
 
             if (!UsersRepository.verifyPassword(password, record.passwordHash)) {
-                throw IllegalArgumentException("Invalid credentials")
+                return@withTransaction TokenResult.InvalidToken
             }
 
             val jwt = TokenUtils.generateJwt(record.id)
@@ -65,7 +66,7 @@ object AuthService {
 
             // Ensure it’s not expired or revoked
             if (oldToken.revoked) {
-                throw IllegalArgumentException("Refresh token revoked")
+                return@withTransaction TokenResult.InvalidToken
             }
 
             val expectedHash = TokenUtils.hashTokenPart(oldTokenPart)
@@ -126,6 +127,15 @@ object AuthService {
         }
     }
 
+    fun updatePassword(userId: UUID, oldPassword: String, newPassword: String): UpdatePasswordResult {
+        return Database.withTransaction { conn ->
+            val user = UsersRepository.findById(conn, userId) ?: return@withTransaction UpdatePasswordResult.NotFound
+            if(!UsersRepository.verifyPassword(oldPassword, user.passwordHash)) return@withTransaction UpdatePasswordResult.IncorrectPassword
+            UsersRepository.updatePassword(conn, newPassword, userId)
+            return@withTransaction UpdatePasswordResult.Success
+        }
+    }
+
     // --------------------
     // DTOs
     // --------------------
@@ -137,5 +147,11 @@ object AuthService {
     sealed interface ForgotPasswordResult {
         data class Success(val resetToken: String) : ForgotPasswordResult
         data object NotFound: ForgotPasswordResult
+    }
+
+    sealed interface UpdatePasswordResult {
+        data object Success : UpdatePasswordResult
+        data object NotFound : UpdatePasswordResult
+        data object IncorrectPassword : UpdatePasswordResult
     }
 }

@@ -1,6 +1,7 @@
 package com.jarrah.infra
 
 import com.jarrah.domain.User
+import com.jarrah.utilities.PassowrdHasher
 import com.jarrah.utilities.TokenUtils
 import io.ktor.utils.io.InternalAPI
 import org.mindrot.jbcrypt.BCrypt
@@ -89,6 +90,16 @@ object UsersRepository {
         val sql = "SELECT id, name, email, password_hash, token_version, created_at, updated_at FROM users WHERE email = ?"
         return conn.prepareStatement(sql).use { stmt ->
             stmt.setString(1, email)
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) mapUserRow(rs) else null
+            }
+        }
+    }
+
+    fun findById(conn: Connection, id: UUID): UserRecord? {
+        val sql = "SELECT id, name, email, password_hash, token_version, created_at, updated_at FROM users WHERE id = ?"
+        return conn.prepareStatement(sql).use { stmt ->
+            stmt.setObject(1, id)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) mapUserRow(rs) else null
             }

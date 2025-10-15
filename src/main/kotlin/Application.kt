@@ -1,13 +1,16 @@
 package com.jarrah
 
 import com.jarrah.controller.authController
+import com.jarrah.controller.userController
 import com.jarrah.infra.UsersRepository
 import com.jarrah.utilities.JwtConfig
 import com.jarrah.utilities.TokenUtils
+import com.jarrah.utilities.UUIDSerializer
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -15,8 +18,12 @@ import io.ktor.server.routing.routing
 import io.ktor.server.resources.*
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+
 
 import org.flywaydb.core.Flyway
+import java.util.UUID
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -26,7 +33,16 @@ fun Application.module() {
     configureHTTP()
     configureMonitoring()
     install(Resources)
-    install(ContentNegotiation) { json() }
+    install(ContentNegotiation) { json(
+        Json {
+            ignoreUnknownKeys = true
+            prettyPrint = false
+            encodeDefaults = true
+            serializersModule = SerializersModule {
+                contextual(UUID::class, UUIDSerializer)
+            }
+        }
+    ) }
 
 
     val config = environment.config.config("ktor.database")
@@ -65,6 +81,9 @@ fun Application.module() {
 
     routing {
         authController()
+        authenticate("auth-jwt") {
+            userController()
+        }
         get("/") {
             call.respondText("Hello World!")
         }

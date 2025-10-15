@@ -1,15 +1,19 @@
 package com.jarrah.domain
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
-
+@Serializable
 data class User(
+    @Contextual
     val id: UUID = UUID.randomUUID(),
     val name: UserName,
     val email: UserEmail,
 )
 
 @JvmInline
+@Serializable
 value class UserName(val value: String){
     init {
         require(value.isNotBlank()) { "UserName cannot be blank" }
@@ -18,6 +22,7 @@ value class UserName(val value: String){
 }
 
 @JvmInline
+@Serializable
 value class UserEmail(val value: String) {
     init {
         require(value.isNotBlank()) { "UserEmail cannot be blank" }

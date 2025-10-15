@@ -3,9 +3,6 @@ package com.jarrah.controller
 import com.jarrah.service.AuthService
 import io.ktor.http.*
 import io.ktor.resources.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
 import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
@@ -72,7 +69,6 @@ data class TokenResponse(val jwt: String, val refreshToken: String)
 data class ForgotPasswordResponse(val token: String)
 
 fun Route.authController() {
-    // Signup
     post<SignupResource> {
         val request = call.receive<SignupRequest>()
             val result = AuthService.signup(
@@ -88,7 +84,6 @@ fun Route.authController() {
         }
     }
 
-    // Login
     post<LoginResource> {
         val request = call.receive<LoginRequest>()
         val result = AuthService.login(
@@ -103,7 +98,6 @@ fun Route.authController() {
         }
     }
 
-    // Refresh
     post<RefreshResource> {
         val request = call.receive<RefreshTokenRequest>()
         val result = AuthService.rotateRefreshToken(request.refreshToken, request.deviceInfo, request.deviceFingerprint)
@@ -114,7 +108,6 @@ fun Route.authController() {
 
     }
 
-    // Forgot Password
     post<ForgotPasswordResource> {
         val request = call.receive<ForgotPasswordRequest>()
         val result = AuthService.forgotPassword(request.email)
@@ -138,16 +131,6 @@ fun Route.authController() {
             is AuthService.TokenResult.Success -> call.respond(HttpStatusCode.OK, result.toResponse())
         }
 
-    }
-
-    // Get current user (JWT auth required)
-    authenticate("auth-jwt") {
-        get<MeResource> {
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal!!.payload.getClaim("sub").asString()
-            // Optionally, fetch full user from DB if needed
-            call.respondText("Hello user $userId")
-        }
     }
 
 }
