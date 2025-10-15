@@ -1,0 +1,17 @@
+ktor:
+  application:
+    modules:
+      - com.jarrah.ApplicationKt.module
+  deployment:
+    port: 8080
+  database:
+    url: "jdbc:postgresql://localhost:5432/jarrah_local"
+    driver: "org.postgresql.Driver"
+    user: "jarrah_db_user"
+    password: "123123123"
+jwt:
+  issuer: jarrah-app
+  expiry: 3600
+auth:
+  pepper: ${?JWT_PEPPER}
+  secret: ${?JWT_SECRET}
