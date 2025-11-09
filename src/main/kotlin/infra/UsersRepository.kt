@@ -1,7 +1,8 @@
 package com.jarrah.infra
 
 import com.jarrah.domain.User
-import com.jarrah.utilities.PassowrdHasher
+import com.jarrah.domain.UserEmail
+import com.jarrah.domain.UserName
 import com.jarrah.utilities.TokenUtils
 import io.ktor.utils.io.InternalAPI
 import org.mindrot.jbcrypt.BCrypt
@@ -76,6 +77,23 @@ object UsersRepository {
         }
     }
 
+    fun getById(id: UUID, conn: Connection): User? {
+        val sql = """
+            SELECT id, name, email from users where id = ?;
+        """.trimIndent()
+        return conn.prepareStatement(sql).use { stmt ->
+            stmt.setObject(1, id)
+            return stmt.executeQuery().use {rs ->
+                return if (rs.next()) {
+                    User(
+                        id = UUID.fromString(rs.getString("id")),
+                        name = UserName(rs.getString("name")),
+                        email = UserEmail(rs.getString("email")),
+                    )
+                } else null
+            }
+        }
+    }
     fun updatePassword(conn: Connection, newPassword: String, userId: UUID) {
         conn.prepareStatement("""
             UPDATE users SET password_hash = ? WHERE id = ?;
