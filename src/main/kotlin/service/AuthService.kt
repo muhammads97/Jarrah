@@ -5,7 +5,6 @@ import com.jarrah.domain.UserEmail
 import com.jarrah.domain.UserName
 import com.jarrah.infra.UsersRepository
 import com.jarrah.utilities.Database
-import com.jarrah.utilities.PassowrdHasher
 import com.jarrah.utilities.TokenUtils
 import java.time.Instant
 import java.util.UUID
